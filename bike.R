@@ -13,16 +13,19 @@ library(xgboost)
 library(precrec)
 
 
-set.seed(123) 
+set.seed(123) #random seed
 
+
+####Charger les donnees
 data <- read.csv("2017-Q1-Trips-History-Data.csv")
 
+####data exploration
 str(data)
 
 table(is.na(data)) # manque-t-il des données ?
 #FALSE 
 #5818572 
-data=data[-which(data$Bike_number=="?(0x0000000074BEBCE4)"),]
+data=data[-which(data$Bike_number=="?(0x0000000074BEBCE4)"),] ###nettoyage
 data$Bike_number=toupper( data$Bike_number)
 
 
@@ -30,7 +33,7 @@ unique(data$Member.Type)
 #[1] "Registered" "Casual" 
 # -> probleme logistique/binaire
 
-
+####data viz
 ggplot(data,aes(x=Member.Type))+geom_bar(fill="#FF9999", colour="black")+scale_fill_brewer(palette = "Pastel1")+theme(axis.text.x =element_text(,hjust = 1,size=10))
 round(prop.table(table(data$Member_Type))*100)  # proportion
 #Casual Registered 
@@ -131,11 +134,7 @@ round(prop.table(table(train$Member_Type))*100)  # proportion
 #        18         82 
 
 
-
-
-
-
-###############
+#####arbre rapide
 tr=rpart(Member_Type ~.,data=train)
 summary(tr)
 #Variable importance
@@ -239,9 +238,8 @@ confusionMatrix(conf)
 # Specificity : 0.7973
 
 
-
- ############## xgboost param arbitraires
-
+############## XGBOOST
+############## param arbitraires
 dtrain=subset(train,select=c(-Member_Type))
 ytrain=subset(train,select=c(Member_Type))
 
@@ -397,6 +395,8 @@ best_param
 # eta=0.12006
 # colsample_bytree=0.7512918
 
+
+########predictions avec les meilleurs parametres
 best_model <- xgb.train(data=ddtrain, eta=0.12006, nthread = 4, nround=500, max_depth=10,objective = "reg:logistic",eval_metric="error",watchlist=watchlist,early_stopping_rounds=10)
 
 pred=predict(best_model, data.matrix(dtest))
